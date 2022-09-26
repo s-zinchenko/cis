@@ -1,0 +1,9 @@
+role,email,password,first_name,last_name,office,birthdate,is_active
+Administrator,j.doe@amonic.com,123,John,Doe,Abu dhabi,1983-1-13,1
+User,k.omar@amonic.com,4258,Karim,Omar,Abu dhabi,1980-3-19,1
+User,h.saeed@amonic.com,2020,Hannan,Saeed,Cairo,1989-12-20,1
+User,a.hobart@amonic.com,6996,Andrew,Hobart,Riyadh,1990-1-30,1
+User,k.anderson@amonic.com,4570,Katrin,Anderson,Doha,1992-11-10,1
+User,h.wyrick@amonic.com,1199,Hava,Wyrick,Abu dhabi,1988-8-8,1
+User,marie.horn@amonic.com,55555,Marie,Horn,Bahrain,1981-4-6,1
+User,m.osteen@amonic.com,9800,Milagros,Osteen,Abu dhabi,1991-2-3,0

@@ -74,10 +74,10 @@ class Migration(migrations.Migration):
             name='Office',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('country', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='amonic.country', verbose_name='Страна')),
                 ('title', models.CharField(max_length=256, verbose_name='Название')),
                 ('phone', models.CharField(max_length=256, verbose_name='Телефон')),
                 ('contact', models.CharField(max_length=256, verbose_name='Контакты')),
-                ('country', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='amonic.country', verbose_name='Страна')),
             ],
         ),
         migrations.AddField(
