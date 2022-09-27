@@ -9,7 +9,9 @@ from amonic.views import (
     role_list,
     edit_role,
     user_list,
-    toggle_user_active, user_activity,
+    toggle_user_active,
+    user_activity,
+    user_info,
 )
 
 router = routers.DefaultRouter()
@@ -20,6 +22,7 @@ router = routers.DefaultRouter()
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
+    path('user', user_info),
     path("login", login_user),
     path("logout", logout_user),
     path("add_user", add_user),

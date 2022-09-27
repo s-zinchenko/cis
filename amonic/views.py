@@ -255,3 +255,23 @@ def user_activity(request):
     return Response(
         user_activity
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def user_info(request):
+    # req_body = json.loads(request.body)
+    # if not (req_body and req_body.get("token")):
+    #     raise ValidationError(
+    #         {
+    #             "status": "Bad Request",
+    #             "code": 400,
+    #             "msg": "required field token not filled!"
+    #         }
+    #     )
+
+    user = request.user
+
+    return Response(
+        {"id": user.id, "email": user.email, "first_name": user.first_name, "last_name": user.last_name, "birthdate": user.birthdate, "role__title": user.role, "office": user.office, "is_active": user.is_active}
+    )
