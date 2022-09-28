@@ -179,11 +179,20 @@ def edit_role(request):
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def user_list(request):
-    req_body = json.loads(request.body)
+    req_query = request.query_params
+    # req_body = json.loads(request.body)
     user_list = []
     filter = {}
-    if req_body.get("office_id"):
-        filter["office_id"] = req_body.get("office_id")
+    if not req_query.get("office_id"):
+        raise ValidationError(
+            {
+                "status": "Bad Request",
+                "code": 400,
+                "msg": "office_id query param is required"
+            }
+        )
+
+    filter["office_id"] = int(req_query.get("office_id"))
 
     for user in User.objects.filter(**filter).values("id", "email", "first_name", "last_name", "birthdate", "role__title", "office", "is_active").exclude(pk=request.user.pk):
         user_birthdate = user.pop("birthdate")

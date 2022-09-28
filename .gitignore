@@ -108,3 +108,4 @@ local/*
 .idea/
 media/
 .vscode/
+db.sqlite3
