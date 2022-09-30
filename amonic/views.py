@@ -274,5 +274,5 @@ def user_info(request):
     total_time = total_time.days * 24 * 60 * 60 + total_time.seconds
     return Response(
         {"id": user.id, "email": user.email, "first_name": user.first_name, "last_name": user.last_name, "birthdate": user.birthdate, "role__title": user.role, "office": user.office, "is_active": user.is_active, "total_time_in_system": total_time,
-                "msg": f"Hi {user.first_name} {user.last_name}, Welcome to AMONIC Airlines Automation System",}
+                "msg": f"Hi {user.first_name} {user.last_name}, Welcome to AMONIC Airlines Automation System", "is_admin": user.is_staff}
     )
