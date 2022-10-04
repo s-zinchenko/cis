@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
-from amonic.models import User, UserLog, Office, Role
+from amonic.models import User, UserLog, Office, Role, UserCrashReport
 
 
 @api_view(["POST"])
@@ -165,6 +165,17 @@ def edit_role(request):
         if req_body.get(k) is None:
             req_body.pop(k)
 
+    admin_role = Role.objects.get(title="Administrator").id
+
+    if req_body.get("role_id") == admin_role:
+        raise ValidationError(
+            {
+                "status": "Bad Request",
+                "code": 400,
+                "msg": f"Admin can not add other admins"
+            }
+        )
+
     user_id = req_body.pop("id")
     User.objects.filter(pk=user_id).update(**req_body)
 
@@ -250,10 +261,6 @@ def user_activity(request):
     user_activity.pop(0)
 
     for user in user_activity:
-        # res = {
-        #     "time_spent": user["logout_date"] - user["login_date"],
-        #     "date":
-        # }
         user["time_spent"] = timezone.now() - user["login_date"]
         if user["logout_date"]:
             user["time_spent"] = user["logout_date"] - user["login_date"]
@@ -273,6 +280,52 @@ def user_info(request):
         days=30)).first().login_date
     total_time = total_time.days * 24 * 60 * 60 + total_time.seconds
     return Response(
-        {"id": user.id, "email": user.email, "first_name": user.first_name, "last_name": user.last_name, "birthdate": user.birthdate, "role__title": user.role, "office": user.office, "is_active": user.is_active, "total_time_in_system": total_time,
+        {"id": user.id, "email": user.email, "first_name": user.first_name, "last_name": user.last_name, "birthdate": user.birthdate, "role__title": user.role.title if user.role else None, "office": user.office.title if user.office else None, "is_active": user.is_active, "total_time_in_system": total_time,
                 "msg": f"Hi {user.first_name} {user.last_name}, Welcome to AMONIC Airlines Automation System", "is_admin": user.is_staff}
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def is_graceful_logout(request):
+    last_login = UserLog.objects.filter(user=request.user).last()
+    data = {"last_login": last_login.login_date}
+    if last_login.logout_date:
+        data["is_graceful_logout"] = True
+    else:
+        data["is_graceful_logout"] = False
+    return Response(
+        data
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def send_report(request):
+    req_body = json.loads(request.body)
+
+    if not (req_body and req_body.get("reason") and req_body.get("description")):
+        raise ValidationError(
+            {
+                "status": "Bad Request",
+                "code": 400,
+                "msg": "required field reason and description not filled!"
+            }
+        )
+
+    if not req_body["reason"] in UserCrashReport.CrashReason.values:
+        raise ValidationError(
+            {
+                "status": "Bad Request",
+                "code": 400,
+                "msg": f"reason must be in {UserCrashReport.CrashReason.values}"
+            }
+        )
+
+    UserCrashReport.objects.create(user=request.user, **req_body)
+    return Response(
+        {
+            "status": "ok",
+            "data": {}
+        }
     )

@@ -139,10 +139,6 @@ class Country(models.Model):
 
 
 class UserLog(models.Model):
-    class CrashReason(models.Choices):
-        SOFTWARE_CRASH = "software_crash"
-        SYSTEM_CRASH = "system_crash"
-
     class Meta:
         verbose_name = "Журнал активности пользователя"
 
@@ -150,13 +146,6 @@ class UserLog(models.Model):
         "amonic.User",
         on_delete=models.CASCADE,
         verbose_name="Пользователь"
-    )
-    reason = models.CharField(
-        max_length=32,
-        choices=CrashReason.choices,
-        verbose_name="Причина ошибки",
-        blank=True,
-        null=True,
     )
     login_date = models.DateTimeField(
         auto_now_add=True,
@@ -171,3 +160,34 @@ class UserLog(models.Model):
 
     def __str__(self):
         return f"{self.user} {self.login_date}"
+
+
+class UserCrashReport(models.Model):
+    class Meta:
+        verbose_name = "Отчёт пользователя об ошибке"
+        verbose_name_plural = "Отчёты пользователя об ошибках"
+
+    class CrashReason(models.Choices):
+        SOFTWARE_CRASH = "software_crash"
+        SYSTEM_CRASH = "system_crash"
+
+    user = models.ForeignKey(
+        "amonic.User",
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь"
+    )
+    date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата/время входа в систему"
+    )
+    description = models.CharField(max_length=2048, verbose_name="Описание ошибки")
+    reason = models.CharField(
+        max_length=32,
+        choices=CrashReason.choices,
+        verbose_name="Причина ошибки",
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return f"{self.user.email} {self.reason} {self.date.isoformat()}"
