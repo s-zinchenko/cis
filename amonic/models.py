@@ -88,7 +88,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
     )
     date_joined = models.DateTimeField(_("date joined"), default=timezone.now)
-    birthdate = models.DateField(default=timezone.now(), verbose_name="Дата рождения")
+    birthdate = models.DateField(default=datetime.date.today(), verbose_name="Дата рождения")
 
     USERNAME_FIELD = "email"
     EMAIL_FIELD = "email"
@@ -185,8 +185,6 @@ class UserCrashReport(models.Model):
         max_length=32,
         choices=CrashReason.choices,
         verbose_name="Причина ошибки",
-        blank=True,
-        null=True,
     )
 
     def __str__(self):

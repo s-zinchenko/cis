@@ -4,14 +4,10 @@ from rest_framework import routers
 from amonic.views import (
     login_user,
     logout_user,
-    add_user,
-    office_list,
-    role_list,
-    edit_role,
-    user_list,
-    toggle_user_active,
-    user_activity,
-    user_info, send_report, is_graceful_logout,
+    OfficeListView,
+    RoleListView,
+    SendReportView, IsGracefulLogoutView, UserInfoView, UserActivityView, ToggleUserActiveView, UserListView,
+    UserAddView, EditRoleView,
 )
 
 router = routers.DefaultRouter()
@@ -20,16 +16,18 @@ router = routers.DefaultRouter()
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
-    path('user', user_info),
+
     path("login", login_user),
     path("logout", logout_user),
-    path("add_user", add_user),
-    path("office_list", office_list),
-    path("user_list", user_list),
-    path("role_list", role_list),
-    path("edit_role", edit_role),
-    path("toggle_activity", toggle_user_active),
-    path("user_activity", user_activity),
-    path("send_report", send_report),
-    path("is_graceful_logout", is_graceful_logout),
+
+    path("edit_role", EditRoleView.as_view()),
+    path("add_user", UserAddView.as_view()),
+    path("office_list", OfficeListView.as_view()),
+    path("role_list", RoleListView.as_view()),
+    path("user_list", UserListView.as_view()),
+    path('user', UserInfoView.as_view()),
+    path("toggle_activity", ToggleUserActiveView.as_view()),
+    path("user_activity", UserActivityView.as_view()),
+    path("send_report", SendReportView.as_view()),
+    path("is_graceful_logout", IsGracefulLogoutView.as_view()),
 ]

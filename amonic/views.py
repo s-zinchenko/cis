@@ -1,18 +1,21 @@
 import json
-import datetime
 
 from django.contrib.auth import login, logout
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
-from django.shortcuts import render
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
+from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from amonic.models import User, UserLog, Office, Role, UserCrashReport
+from amonic.serializers import UserCrashReportSerializer, UserActivitySerializer, \
+    ToggleUserActiveSerializer, UserListSerializer, IdTitleSerializer, UserAddSerializer, EditRoleSerializer, \
+    IsGracefulSerializer
 
 
 @api_view(["POST"])
@@ -86,246 +89,128 @@ def logout_user(request):
     return Response({"message": 'User Logged out successfully'})
 
 
-@api_view(["POST"])
-@permission_classes([IsAdminUser])
-def add_user(request):
-    req_body = json.loads(request.body)
-    if not (
-            req_body
-            and req_body.get("email")
-            and req_body.get("password")
-            and req_body.get("first_name")
-            and req_body.get("last_name")
-            and req_body.get("office")
-            and req_body.get("birthdate")
-    ):
-        raise ValidationError(
-            {
-                "status": "Bad Request",
-                "code": 400,
-                "msg": "email, password, first_name, last_name, office, birthdate fields is required"
-            }
-        )
-
-    try:
-        office = req_body.pop("office")
-        req_body["office_id"] = office
-        req_body["role_id"] = Role.objects.get(title__in=["User", "Пользователь"]).id
-        User.objects.create_user(**req_body)
-    except Exception as e:
-        raise ValidationError(
-            {
-                "status": "Forbidden",
-                "code": 403,
-                "msg": str(e)
-            }
-        )
-    return Response(
-        {
-            "status": "ok",
-            "code": 200,
-        }
-    )
+class UserAddView(CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserAddSerializer
+    permission_classes = [IsAdminUser,]
 
 
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def office_list(request):
-    office_list = Office.objects.values("id", "title")
-    return Response(
-        office_list
-    )
+class OfficeListView(ListAPIView):
+    queryset = Office.objects.all()
+    serializer_class = IdTitleSerializer
+    permission_classes = [IsAdminUser,]
 
 
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def role_list(request):
-    role_list = Role.objects.values("id", "title")
-    return Response(
-        role_list
-    )
+class RoleListView(ListAPIView):
+    queryset = Role.objects.all()
+    serializer_class = IdTitleSerializer
+    permission_classes = [IsAdminUser,]
 
 
-@api_view(["POST"])
-@permission_classes([IsAdminUser])
-def edit_role(request):
-    req_body = json.loads(request.body)
-    allowed_fields = {"id", "email", "first_name", "last_name", "office_id", "role_id"}
+class EditRoleView(APIView):
+    queryset = User.objects.all()
+    serializer_class = EditRoleSerializer
+    permission_classes = [IsAdminUser, ]
 
-    if not set(req_body.keys()).issubset(allowed_fields):
-        raise ValidationError(
-            {
-                "status": "Bad Request",
-                "code": 400,
-                "msg": f"allowed_fields: {allowed_fields}"
-            }
-        )
-
-    for k in req_body.keys():
-        if req_body.get(k) is None:
-            req_body.pop(k)
-
-    admin_role = Role.objects.get(title="Administrator").id
-
-    if req_body.get("role_id") == admin_role:
-        raise ValidationError(
-            {
-                "status": "Bad Request",
-                "code": 400,
-                "msg": f"Admin can not add other admins"
-            }
-        )
-
-    user_id = req_body.pop("id")
-    User.objects.filter(pk=user_id).update(**req_body)
-
-    return Response(
-        {
-            "status": "ok",
-            "code": 200,
-        }
-    )
-
-
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def user_list(request):
-    req_query = request.query_params
-    user_list = []
-    filter = {}
-    if not req_query.get("office_id"):
-        for user in User.objects.all().values("id", "email", "first_name", "last_name", "birthdate","role__title", "office", "is_active").exclude(pk=request.user.pk):
-            user_birthdate = user.pop("birthdate")
-            user["age"] = int((datetime.date.today() - user_birthdate).days / 365)
-            user_list.append(user)
+    def post(self, request, *args, **kwargs):
+        user_id = self.request.data.pop("id")
+        body = self.request.data
+        User.objects.filter(pk=user_id).update(**body)
         return Response(
-            user_list
-        )
-
-    filter["office_id"] = int(req_query.get("office_id"))
-
-    for user in User.objects.filter(**filter).values("id", "email", "first_name", "last_name", "birthdate", "role__title", "office", "is_active").exclude(pk=request.user.pk):
-        user_birthdate = user.pop("birthdate")
-        user["age"] = int((datetime.date.today() - user_birthdate).days / 365)
-        user_list.append(user)
-    return Response(
-        user_list
-    )
-
-
-@api_view(["POST"])
-@permission_classes([IsAdminUser])
-def toggle_user_active(request):
-    req_body = json.loads(request.body)
-    if not (req_body and req_body.get("user_id")):
-        raise ValidationError(
             {
-                "status": "Bad Request",
-                "code": 400,
-                "msg": "required field user_id not filled!"
-            }
-        )
-    user = User.objects.filter(id=req_body.get("user_id")).first()
-    if not user:
-        raise ValidationError(
-            {
-                "status": "Not Found",
-                "code": 404,
-                "msg": "User not found!"
+                "status": "ok",
+                "code": 200,
             }
         )
 
-    user.is_active = not user.is_active
-    user.save()
 
-    return Response(
-        {
-            "status": "ok",
-            "code": 200,
-            "data": {
-                "user": {
-                    "id": user.id,
-                    "is_active": user.is_active,
-                }
-            }
-        }
-    )
+class UserListView(ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserListSerializer
+    permission_classes = [IsAuthenticated,]
+
+    def get_queryset(self):
+        queryset = User.objects.exclude(pk=self.request.user.pk)
+        office_id = self.request.query_params.get("office_id")
+        if office_id:
+            queryset.filter(office_id=int(office_id))
+        return queryset
 
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def user_activity(request):
-    user_activity = UserLog.objects.filter(user=request.user).values("reason", "login_date", "logout_date").order_by("-id")
-    user_activity = list(user_activity)
-    res = []
-    user_activity.pop(0)
+class ToggleUserActiveView(UpdateAPIView):
+    permission_classes = [IsAdminUser,]
+    serializer_class = ToggleUserActiveSerializer
 
-    for user in user_activity:
-        user["time_spent"] = timezone.now() - user["login_date"]
-        if user["logout_date"]:
-            user["time_spent"] = user["logout_date"] - user["login_date"]
+    def post(self, request, *args, **kwargs):
+        user_id = self.request.data["id"]
+        user = User.objects.filter(id=user_id).first()
+        user.is_active = not user.is_active
+        user.save()
+        serializer = self.serializer_class({"is_active": user.is_active, "id": user.id})
+        return Response(serializer.data)
+
+
+class UserActivityView(ListAPIView):
+    queryset = UserLog.objects.all()
+    permission_classes = [IsAuthenticated, ]
+    serializer_class = UserActivitySerializer
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        queryset = queryset.filter(user=self.request.user).order_by("-id")
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        user_activity = self.filter_queryset(queryset)
+        user_activity = user_activity[1:]
+
+        for user in user_activity:
+            user.time_spent = timezone.now() - user.login_date
+            if user.logout_date:
+                user.time_spent = user.logout_date - user.login_date
+            else:
+                user.time_spent = ""
+
+        serializer = self.serializer_class(user_activity, many=True)
+        return Response(serializer.data)
+
+
+class UserInfoView(APIView):
+    permission_classes = [IsAuthenticated, ]
+    # serializer_class = UserInfoSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        total_time = timezone.now() - UserLog.objects.filter(user=user,
+                                                             login_date__gte=timezone.now() - timezone.timedelta(
+                                                                 days=30)).first().login_date
+        total_time = total_time.days * 24 * 60 * 60 + total_time.seconds
+        return Response(
+            {"id": user.id, "email": user.email, "first_name": user.first_name, "last_name": user.last_name,
+             "birthdate": user.birthdate, "role__title": user.role.title if user.role else None,
+             "office": user.office.title if user.office else None, "is_active": user.is_active,
+             "total_time_in_system": total_time,
+             "msg": f"Hi {user.first_name} {user.last_name}, Welcome to AMONIC Airlines Automation System",
+             "is_admin": user.is_staff}
+        )
+
+
+class IsGracefulLogoutView(APIView):
+    serializer_class = IsGracefulSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def get(self, request, *args, **kwargs):
+        last_login = UserLog.objects.filter(user=request.user).last()
+        data = {"last_login": last_login.login_date}
+        if last_login.logout_date:
+            data["is_graceful_logout"] = True
         else:
-            user["logout_date"] = user["login_date"] + timezone.timedelta(hours=24)
-
-    return Response(
-        user_activity
-    )
+            data["is_graceful_logout"] = False
+        return Response(data)
 
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def user_info(request):
-    user = request.user
-    total_time = timezone.now() - UserLog.objects.filter(user=user, login_date__gte=timezone.now() - timezone.timedelta(
-        days=30)).first().login_date
-    total_time = total_time.days * 24 * 60 * 60 + total_time.seconds
-    return Response(
-        {"id": user.id, "email": user.email, "first_name": user.first_name, "last_name": user.last_name, "birthdate": user.birthdate, "role__title": user.role.title if user.role else None, "office": user.office.title if user.office else None, "is_active": user.is_active, "total_time_in_system": total_time,
-                "msg": f"Hi {user.first_name} {user.last_name}, Welcome to AMONIC Airlines Automation System", "is_admin": user.is_staff}
-    )
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def is_graceful_logout(request):
-    last_login = UserLog.objects.filter(user=request.user).last()
-    data = {"last_login": last_login.login_date}
-    if last_login.logout_date:
-        data["is_graceful_logout"] = True
-    else:
-        data["is_graceful_logout"] = False
-    return Response(
-        data
-    )
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def send_report(request):
-    req_body = json.loads(request.body)
-
-    if not (req_body and req_body.get("reason") and req_body.get("description")):
-        raise ValidationError(
-            {
-                "status": "Bad Request",
-                "code": 400,
-                "msg": "required field reason and description not filled!"
-            }
-        )
-
-    if not req_body["reason"] in UserCrashReport.CrashReason.values:
-        raise ValidationError(
-            {
-                "status": "Bad Request",
-                "code": 400,
-                "msg": f"reason must be in {UserCrashReport.CrashReason.values}"
-            }
-        )
-
-    UserCrashReport.objects.create(user=request.user, **req_body)
-    return Response(
-        {
-            "status": "ok",
-            "data": {}
-        }
-    )
+class SendReportView(CreateAPIView):
+    queryset = UserCrashReport.objects.all()
+    permission_classes = [IsAuthenticated,]
+    serializer_class = UserCrashReportSerializer
