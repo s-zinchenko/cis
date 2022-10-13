@@ -7,7 +7,7 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, UpdateAPIView, GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -161,10 +161,12 @@ class UserActivityView(ListAPIView):
         return queryset
 
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.get_queryset().select_related("crash_report")
         user_activity = self.filter_queryset(queryset)
         user_activity = user_activity[1:]
 
+
+        a = UserCrashReport.objects.first()
         for user in user_activity:
             user.time_spent = timezone.now() - user.login_date
             if user.logout_date:
@@ -196,13 +198,13 @@ class UserInfoView(APIView):
         )
 
 
-class IsGracefulLogoutView(APIView):
+class IsGracefulLogoutView(GenericAPIView):
     serializer_class = IsGracefulSerializer
     permission_classes = [IsAuthenticated, ]
 
     def get(self, request, *args, **kwargs):
         last_login = UserLog.objects.filter(user=request.user).last()
-        data = {"last_login": last_login.login_date}
+        data = {"user_log_id": last_login.id, "last_login": last_login.login_date}
         if last_login.logout_date:
             data["is_graceful_logout"] = True
         else:

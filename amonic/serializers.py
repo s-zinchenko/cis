@@ -6,7 +6,7 @@ from amonic.models import UserCrashReport, User, UserLog, Role
 class UserCrashReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserCrashReport
-        fields = ("description", "reason", )
+        fields = ("description", "reason", "userlog")
 
     def validate(self, attrs):
         validated_data = super().validate(attrs)
@@ -23,14 +23,25 @@ class TitleSerializer(serializers.Serializer):
     title = serializers.CharField()
 
 
+class UnsuccessfulLogoutReasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserCrashReport
+        fields = (
+            "reason"
+        )
+
+
 class UserActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = UserLog
         fields = (
+            "id",
             "login_date",
             "logout_date",
             "time_spent",
+            "crash_report",
         )
+        depth = 1
 
     time_spent = serializers.CharField()
 
@@ -99,6 +110,7 @@ class EditRoleSerializer(serializers.ModelSerializer):
 
 
 class IsGracefulSerializer(serializers.Serializer):
+    user_log_id = serializers.IntegerField()
     last_login = serializers.DateTimeField()
     is_graceful_logout = serializers.BooleanField()
 

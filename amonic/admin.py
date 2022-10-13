@@ -1,13 +1,13 @@
 from django.contrib import admin
 
-from amonic.models import UserLog, Country, Office, Role, User
+from amonic.models import UserLog, Country, Office, Role, User, UserCrashReport
 
 
 @admin.register(UserLog)
 class UserLogAdmin(admin.ModelAdmin):
     fields = (
         "user",
-        "reason",
+        "crash_report",
         "logout_date",
     )
 
@@ -29,4 +29,9 @@ class RoleAdmin(admin.ModelAdmin):
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(UserCrashReport)
+class UserCrashReport(admin.ModelAdmin):
     pass

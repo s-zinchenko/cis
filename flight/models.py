@@ -46,3 +46,11 @@ class Schedule(models.Model):
     flight_number = models.CharField(max_length=16, verbose_name="Номер рейса")
     economy_price = models.IntegerField(verbose_name="Цена билета в эконом-классе")
     confirmed = models.SmallIntegerField(default=False, verbose_name="Подтверждён?")
+
+    @property
+    def get_business_price(self):
+        return self.economy_price * 1.35
+
+    @property
+    def get_first_class_price(self):
+        return self.get_business_price * 1.30

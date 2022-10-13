@@ -157,6 +157,7 @@ class UserLog(models.Model):
         blank=True,
         null=True,
     )
+    crash_report = models.OneToOneField("amonic.UserCrashReport", on_delete=models.PROTECT, verbose_name="Сообщение об ошибке", null=True, blank=True)
 
     def __str__(self):
         return f"{self.user} {self.login_date}"
