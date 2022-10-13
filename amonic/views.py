@@ -203,7 +203,7 @@ class IsGracefulLogoutView(GenericAPIView):
     permission_classes = [IsAuthenticated, ]
 
     def get(self, request, *args, **kwargs):
-        last_login = UserLog.objects.filter(user=request.user).last()
+        last_login = UserLog.objects.filter(user=request.user).order_by("-id")[1]
         data = {"user_log_id": last_login.id, "last_login": last_login.login_date}
         if last_login.logout_date:
             data["is_graceful_logout"] = True
