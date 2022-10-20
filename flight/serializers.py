@@ -57,8 +57,14 @@ class SchedulesListSerializer(serializers.ModelSerializer):
 
     aircraft = AircraftSerializer()
     route = RouteSerializer()
+    confirmed = serializers.BooleanField()
     business_price = serializers.IntegerField(source="get_business_price")
     first_class_price = serializers.IntegerField(source="get_first_class_price")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["confirmed"] = False if data["confirmed"] == 0 else True
+        return data
 
 
 class CancelFlightSerializer(serializers.ModelSerializer):
