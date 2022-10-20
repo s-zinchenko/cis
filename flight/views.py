@@ -3,6 +3,7 @@ import csv
 import datetime
 from typing import Any
 
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.generics import ListAPIView, UpdateAPIView, GenericAPIView
 from rest_framework.parsers import FileUploadParser
@@ -20,9 +21,9 @@ class SchedulesListView(ListAPIView):
     permission_classes = [AllowAny]
     queryset = Schedule.objects.all().order_by("date", "time")
     serializer_class = SchedulesListSerializer
-    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
     ordering_fields = ['date', 'time', 'economy_price', 'confirmed']
-    search_fields = ["route__departure_airport__iata_code", "route__arrival_airport__iata_code", "flight_number", "date"]
+    filterset_fields = ["route__departure_airport__iata_code", "route__arrival_airport__iata_code", "flight_number", "date"]
 
 
 class CancelFlightView(UpdateAPIView):

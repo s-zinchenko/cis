@@ -69,6 +69,13 @@ class CancelFlightSerializer(serializers.ModelSerializer):
             "confirmed",
         )
 
+    confirmed = serializers.BooleanField()
+
+    def validate(self, attrs):
+        validated_data = super().validate(attrs)
+        validated_data["confirmed"] = 1 if validated_data["confirmed"] is True else 0
+        return validated_data
+
 
 class ScheduleEditSerializer(serializers.ModelSerializer):
     class Meta:
