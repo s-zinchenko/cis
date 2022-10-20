@@ -13,7 +13,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from flight.models import Schedule, Airport, Route, Aircraft
 from flight.serializers import SchedulesListSerializer, CancelFlightSerializer, AirportSerialzier, UploadFileSerilizer, \
-    UploadFileResSerilizer
+    UploadFileResSerilizer, ScheduleEditSerializer
 from utils.common import to_int
 
 
@@ -40,6 +40,7 @@ class AirportListView(ListAPIView):
 class ScheduleEditView(UpdateAPIView):
     permission_classes = [AllowAny]
     queryset = Schedule.objects.all()
+    serializer_class = ScheduleEditSerializer
 
 
 class UploadFileView(GenericAPIView):
