@@ -13,6 +13,13 @@ class UserCrashReportSerializer(serializers.ModelSerializer):
         validated_data["user"] = self.context['request'].user
         return validated_data
 
+    def create(self, validated_data):
+        crash_report = UserCrashReport.objects.create(**validated_data)
+        userlog = validated_data["userlog"]
+        userlog.crash_report_id = crash_report.id
+        userlog.save()
+        return crash_report
+
 
 class IsGracefulLogout(serializers.Serializer):
     last_login = serializers.DateTimeField()

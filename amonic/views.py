@@ -165,8 +165,6 @@ class UserActivityView(ListAPIView):
         user_activity = self.filter_queryset(queryset)
         user_activity = user_activity[1:]
 
-
-        a = UserCrashReport.objects.first()
         for user in user_activity:
             user.time_spent = timezone.now() - user.login_date
             if user.logout_date:
